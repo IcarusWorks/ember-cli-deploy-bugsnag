@@ -20,7 +20,10 @@
   },
   "dependencies": {
     "ember-cli-babel": "^5.1.7",
-    "ember-cli-deploy-plugin": "^0.2.9"
+    "ember-cli-deploy-plugin": "^0.2.9",
+    "fs": "0.0.1-security",
+    "request": "^2.81.0",
+    "rsvp": "^3.5.0"
   },
   "devDependencies": {
     "broccoli-asset-rev": "^2.4.5",
