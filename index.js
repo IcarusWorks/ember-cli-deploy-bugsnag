@@ -29,6 +29,7 @@ module.exports = {
       requiredConfig: ['apiKey', 'baseUrl'],
 
       upload: function() {
+        var log = this.log.bind(this);
         var apiKey = this.readConfig('apiKey');
         var revisionKey = this.readConfig('revisionKey');
         var distDir = this.readConfig('distDir');
@@ -41,6 +42,7 @@ module.exports = {
         var mapFiles = distFiles.filter(function(file) {
           return /assets\/.*\.map$/.test(file);
         });
+        log('Uploading sourcemaps to bugsnag');
 
         for (var i = 0; i < mapFiles.length; i++) {
           var mapFile = mapFiles[i];
@@ -60,7 +62,10 @@ module.exports = {
           });
           promises.push(promise);
         }
-        return RSVP.all(promises);
+        return RSVP.all(promises)
+          .then(function() {
+            log('Finished upload');
+          });
       },
     });
 
