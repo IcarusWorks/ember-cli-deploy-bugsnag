@@ -3,7 +3,7 @@
 
 var RSVP = require('rsvp');
 var fs = require('fs');
-var request = require('request-promise');
+var FormData = require('form-data');
 
 var BasePlugin = require('ember-cli-deploy-plugin');
 
@@ -49,17 +49,12 @@ module.exports = {
           var jsFile = jsFiles[i];
           var mapFilePath = distDir + '/' + mapFile;
           var jsFilePath = baseUrl + '/' + jsFile;
-          var formData = {
-            apiKey: apiKey,
-            version: revisionKey,
-            minifiedUrl: jsFilePath,
-            sourceMap: fs.createReadStream(mapFilePath),
-          };
-          var promise = request({
-            uri: 'https://upload.bugsnag.com/',
-            method: 'POST',
-            formData: formData,
-          });
+          var formData = new FormData();
+          formData.append('apiKey', apiKey);
+          formData.append('version', revisionKey);
+          formData.append('minifiedUrl', jsFilePath);
+          formData.append('sourceMap', fs.createReadStream(mapFilePath));
+          var promise = request(formData);
           promises.push(promise);
         }
         return RSVP.all(promises)
@@ -72,3 +67,18 @@ module.exports = {
     return new DeployPlugin();
   }
 };
+
+function request(formData) {
+  return new RSVP.Promise(function(resolve, reject) {
+    formData.submit('https://upload.bugsnag.com', function(error, result) {
+      if(error) {
+        reject(error);
+      }
+      result.resume();
+
+      result.on('end', function() {
+        resolve();
+      });
+    });
+  });
+}
