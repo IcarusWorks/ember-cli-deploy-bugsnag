@@ -30,6 +30,7 @@ module.exports = {
           }
         },
         deleteSourcemaps: true,
+        overwrite: 'true',
       },
 
       requiredConfig: ['apiKey', 'publicUrl'],
@@ -41,6 +42,7 @@ module.exports = {
         var distDir = this.readConfig('distDir');
         var distFiles = this.readConfig('distFiles');
         var publicUrl = this.readConfig('publicUrl');
+        var overwrite = this.readConfig('overwrite');
         var promises = [];
         var jsFilePaths = fetchFilePaths(distFiles, publicUrl, 'js');
         var mapFilePaths = fetchFilePaths(distFiles, distDir, 'map');
@@ -51,6 +53,7 @@ module.exports = {
           var jsFilePath = jsFilePaths[i];
           var formData = {
             apiKey: apiKey,
+            overwrite: overwrite,
             minifiedUrl: jsFilePath,
             sourceMap: fs.createReadStream(mapFilePath)
           };
