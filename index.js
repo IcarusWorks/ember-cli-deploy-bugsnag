@@ -38,19 +38,13 @@ module.exports = {
         var distFiles = this.readConfig('distFiles');
         var publicUrl = this.readConfig('publicUrl');
         var promises = [];
-        var jsFiles = distFiles.filter(function(file) {
-          return /assets\/.*\.js$/.test(file);
-        });
-        var mapFiles = distFiles.filter(function(file) {
-          return /assets\/.*\.map$/.test(file);
-        });
+        var jsFilePaths = fetchFilePaths(distFiles, publicUrl, 'js');
+        var mapFilePaths = fetchFilePaths(distFiles, distDir, 'map');
         log('Uploading sourcemaps to bugsnag');
 
-        for (var i = 0; i < mapFiles.length; i++) {
-          var mapFile = mapFiles[i];
-          var jsFile = jsFiles[i];
-          var mapFilePath = path.join(distDir, mapFile);
-          var jsFilePath = path.join(publicUrl, jsFile);
+        for (var i = 0; i < mapFilePaths.length; i++) {
+          var mapFilePath = mapFilePaths[i];
+          var jsFilePath = jsFilePaths[i];
           var formData = new FormData();
           formData.append('apiKey', apiKey);
           formData.append('appVersion', revisionKey);
@@ -69,13 +63,12 @@ module.exports = {
         this.log('Deleting sourcemaps');
         var deleteSourcemaps = this.readConfig('deleteSourcemaps');
         if (deleteSourcemaps) {
+          var distDir = this.readConfig('distDir');
           var distFiles = this.readConfig('distFiles');
-          var mapFiles = distFiles.filter(function(file) {
-            return /assets\/.*\.map$/.test(file);
-          });
-          var promises = mapFiles.map(function(file) {
+          var mapFilePaths = fetchFilePaths(distFiles, distDir, 'map');
+          var promises = mapFilePaths.map(function(mapFilePath) {
             return new RSVP.Promise(function(resolve, reject) {
-              fs.unlink(file, function(err) {
+              fs.unlink(mapFilePath, function(err) {
                 if (err) {
                   reject();
                 } else {
@@ -106,5 +99,14 @@ function request(formData) {
         resolve();
       });
     });
+  });
+}
+
+function fetchFilePaths(distFiles, basePath, type) {
+  return distFiles.filter(function(filePath) {
+    return new RegExp('assets\/.*\\.' + type + '$').test(filePath);
+  })
+  .map(function(filePath) {
+    return path.join(basePath, filePath);
   });
 }
