@@ -26,7 +26,7 @@ module.exports = {
           if (context.revisionData) {
             return context.revisionData.revisionKey;
           } else {
-            return process.SOURCE_VERSION || '';
+            return process.env.SOURCE_VERSION || '';
           }
         },
         deleteSourcemaps: true,
