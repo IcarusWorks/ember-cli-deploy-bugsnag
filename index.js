@@ -3,7 +3,7 @@
 
 var RSVP = require('rsvp');
 var fs = require('fs');
-var FormData = require('form-data');
+var request = require('request-promise');
 var path = require('path');
 
 var BasePlugin = require('ember-cli-deploy-plugin');
@@ -23,7 +23,11 @@ module.exports = {
           return context.distFiles;
         },
         revisionKey: function(context) {
-          return context.revisionData && context.revisionData.revisionKey;
+          if (context.revisionData) {
+            return context.revisionData.revisionKey;
+          } else {
+            return process.SOURCE_VERSION || '';
+          }
         },
         deleteSourcemaps: true,
       },
@@ -45,12 +49,19 @@ module.exports = {
         for (var i = 0; i < mapFilePaths.length; i++) {
           var mapFilePath = mapFilePaths[i];
           var jsFilePath = jsFilePaths[i];
-          var formData = new FormData();
-          formData.append('apiKey', apiKey);
-          formData.append('appVersion', revisionKey);
-          formData.append('minifiedUrl', jsFilePath);
-          formData.append('sourceMap', fs.createReadStream(mapFilePath));
-          var promise = request(formData);
+          var formData = {
+            apiKey: apiKey,
+            minifiedUrl: jsFilePath,
+            sourceMap: fs.createReadStream(mapFilePath)
+          };
+          if (revisionKey) {
+            formData.appVersion = revisionKey;
+          }
+          var promise = request({
+            uri: 'https://upload.bugsnag.com',
+            method: 'POST',
+            formData: formData
+          });
           promises.push(promise);
         }
         return RSVP.all(promises)
@@ -86,21 +97,6 @@ module.exports = {
     return new DeployPlugin();
   }
 };
-
-function request(formData) {
-  return new RSVP.Promise(function(resolve, reject) {
-    formData.submit('https://upload.bugsnag.com', function(error, result) {
-      if(error) {
-        reject(error);
-      }
-      result.resume();
-
-      result.on('end', function() {
-        resolve();
-      });
-    });
-  });
-}
 
 function fetchFilePaths(distFiles, basePath, type) {
   return distFiles.filter(function(filePath) {
