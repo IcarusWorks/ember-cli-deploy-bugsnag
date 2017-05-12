@@ -4,6 +4,7 @@
 var RSVP = require('rsvp');
 var fs = require('fs');
 var FormData = require('form-data');
+var path = require('path');
 
 var BasePlugin = require('ember-cli-deploy-plugin');
 
@@ -24,9 +25,10 @@ module.exports = {
         revisionKey: function(context) {
           return context.revisionData && context.revisionData.revisionKey;
         },
+        deleteSourcemaps: true,
       },
 
-      requiredConfig: ['apiKey', 'baseUrl'],
+      requiredConfig: ['apiKey', 'publicUrl'],
 
       upload: function() {
         var log = this.log.bind(this);
@@ -34,7 +36,7 @@ module.exports = {
         var revisionKey = this.readConfig('revisionKey');
         var distDir = this.readConfig('distDir');
         var distFiles = this.readConfig('distFiles');
-        var baseUrl = this.readConfig('baseUrl');
+        var publicUrl = this.readConfig('publicUrl');
         var promises = [];
         var jsFiles = distFiles.filter(function(file) {
           return /assets\/.*\.js$/.test(file);
@@ -47,11 +49,11 @@ module.exports = {
         for (var i = 0; i < mapFiles.length; i++) {
           var mapFile = mapFiles[i];
           var jsFile = jsFiles[i];
-          var mapFilePath = distDir + '/' + mapFile;
-          var jsFilePath = baseUrl + '/' + jsFile;
+          var mapFilePath = path.join(distDir, mapFile);
+          var jsFilePath = path.join(publicUrl, jsFile);
           var formData = new FormData();
           formData.append('apiKey', apiKey);
-          formData.append('version', revisionKey);
+          formData.append('appVersion', revisionKey);
           formData.append('minifiedUrl', jsFilePath);
           formData.append('sourceMap', fs.createReadStream(mapFilePath));
           var promise = request(formData);
@@ -59,8 +61,32 @@ module.exports = {
         }
         return RSVP.all(promises)
           .then(function() {
-            log('Finished upload');
+            log('Finished uploading sourcemaps');
           });
+      },
+
+      didUpload() {
+        this.log('Deleting sourcemaps');
+        var deleteSourcemaps = this.readConfig('deleteSourcemaps');
+        if (deleteSourcemaps) {
+          var distFiles = this.readConfig('distFiles');
+          var mapFiles = distFiles.filter(function(file) {
+            return /assets\/.*\.map$/.test(file);
+          });
+          var promises = mapFiles.map(function(file) {
+            return new RSVP.Promise(function(resolve, reject) {
+              fs.unlink(file, function(err) {
+                if (err) {
+                  reject();
+                } else {
+                  resolve();
+                }
+              });
+            });
+          });
+
+          return RSVP.all(promises);
+        }
       },
     });
 
