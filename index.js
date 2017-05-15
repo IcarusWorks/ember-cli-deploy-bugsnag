@@ -4,7 +4,6 @@
 var RSVP = require('rsvp');
 var fs = require('fs');
 var request = require('request-promise');
-var path = require('path');
 
 var BasePlugin = require('ember-cli-deploy-plugin');
 
@@ -106,6 +105,6 @@ function fetchFilePaths(distFiles, basePath, type) {
     return new RegExp('assets\/.*\\.' + type + '$').test(filePath);
   })
   .map(function(filePath) {
-    return path.join(basePath, filePath);
+    return basePath + '/' + filePath;
   });
 }
