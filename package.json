@@ -21,21 +21,14 @@
   "scripts": {
     "build": "ember build",
     "start": "ember server",
-    "test": "./node_modules/mocha/bin/mocha tests/unit/index-nodetest.js"
+    "test": "ember try:each"
   },
   "dependencies": {
     "ember-cli-babel": "^5.1.7",
-    "ember-cli-deploy-plugin": "^0.2.9",
-    "fs": "0.0.1-security",
-    "path": "^0.12.7",
-    "request": "^2.81.0",
-    "request-promise": "^4.2.1",
-    "rsvp": "^3.5.0"
+    "ember-cli-deploy-plugin": "^0.2.9"
   },
   "devDependencies": {
     "broccoli-asset-rev": "^2.4.5",
-    "chai": "^3.5.0",
-    "chai-as-promised": "^6.0.0",
     "ember-ajax": "^2.4.1",
     "ember-cli": "2.10.0",
     "ember-cli-app-version": "^2.0.0",
@@ -49,14 +42,16 @@
     "ember-cli-sri": "^2.1.0",
     "ember-cli-test-loader": "^1.1.0",
     "ember-cli-uglify": "^1.2.0",
-    "ember-data": "^2.10.0",
     "ember-disable-prototype-extensions": "^1.1.0",
     "ember-export-application-global": "^1.0.5",
     "ember-load-initializers": "^0.5.1",
     "ember-resolver": "^2.0.3",
-    "ember-welcome-page": "^1.0.3",
+    "fs": "0.0.1-security",
     "loader.js": "^4.0.10",
-    "mocha": "^3.3.0"
+    "path": "^0.12.7",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1",
+    "rsvp": "^3.5.0"
   },
   "engines": {
     "node": ">= 0.12.0"
