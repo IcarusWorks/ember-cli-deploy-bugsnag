@@ -2,7 +2,7 @@
 'use strict';
 
 var RSVP = require('rsvp');
-var fs = require('fs');
+var fs = require('fs-extra');
 var request = require('request-promise');
 
 var BasePlugin = require('ember-cli-deploy-plugin');
