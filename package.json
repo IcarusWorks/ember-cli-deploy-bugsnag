@@ -25,7 +25,11 @@
   },
   "dependencies": {
     "ember-cli-babel": "^5.1.7",
-    "ember-cli-deploy-plugin": "^0.2.9"
+    "ember-cli-deploy-plugin": "^0.2.9",
+    "path": "^0.12.7",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1",
+    "rsvp": "^3.5.0"
   },
   "devDependencies": {
     "broccoli-asset-rev": "^2.4.5",
@@ -47,11 +51,7 @@
     "ember-load-initializers": "^0.5.1",
     "ember-resolver": "^2.0.3",
     "fs": "0.0.1-security",
-    "loader.js": "^4.0.10",
-    "path": "^0.12.7",
-    "request": "^2.81.0",
-    "request-promise": "^4.2.1",
-    "rsvp": "^3.5.0"
+    "loader.js": "^4.0.10"
   },
   "engines": {
     "node": ">= 0.12.0"
