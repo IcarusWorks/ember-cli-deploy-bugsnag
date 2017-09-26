@@ -29,6 +29,7 @@ module.exports = {
             return process.env.SOURCE_VERSION || '';
           }
         },
+        includeAppVersion: true,
         deleteSourcemaps: true,
         overwrite: 'true',
       },
@@ -43,6 +44,7 @@ module.exports = {
         var distFiles = this.readConfig('distFiles');
         var publicUrl = this.readConfig('publicUrl');
         var overwrite = this.readConfig('overwrite');
+        var includeAppVersion = this.readConfig('includeAppVersion');
         var promises = [];
         var jsFilePaths = fetchFilePaths(distFiles, publicUrl, 'js');
         var mapFilePaths = fetchFilePaths(distFiles, distDir, 'map');
@@ -57,7 +59,7 @@ module.exports = {
             minifiedUrl: jsFilePath,
             sourceMap: fs.createReadStream(mapFilePath)
           };
-          if (revisionKey) {
+          if (revisionKey && includeAppVersion) {
             formData.appVersion = revisionKey;
           }
           var promise = request({
