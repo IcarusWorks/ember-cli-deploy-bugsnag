@@ -48,7 +48,7 @@ module.exports = {
         var promises = [];
         var jsFilePaths = fetchFilePaths(distFiles, publicUrl, 'js');
         var mapFilePaths = fetchFilePaths(distFiles, distDir, 'map');
-        log('Uploading sourcemaps to bugsnag');
+        log('Uploading sourcemaps to bugsnag', { verbose: true });
 
         for (var i = 0; i < mapFilePaths.length; i++) {
           var mapFilePath = mapFilePaths[i];
@@ -71,12 +71,12 @@ module.exports = {
         }
         return RSVP.all(promises)
           .then(function() {
-            log('Finished uploading sourcemaps');
+            log('Finished uploading sourcemaps', { verbose: true });
           });
       },
 
       didUpload() {
-        this.log('Deleting sourcemaps');
+        this.log('Deleting sourcemaps', { verbose: true });
         var deleteSourcemaps = this.readConfig('deleteSourcemaps');
         if (deleteSourcemaps) {
           var distDir = this.readConfig('distDir');
