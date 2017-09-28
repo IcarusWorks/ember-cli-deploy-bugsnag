@@ -69,6 +69,7 @@ Set in [`config/deploy.js`](http://ember-cli-deploy.com/docs/v1.0.x/configuratio
 | `distFiles`     | array of strings | No      | `context.distFiles` | The array of built project files. This option should be relative to `distDir`. By default, this option will use the `distFiles` property of the [deployment context](http://ember-cli-deploy.com/docs/v0.5.x/deployment-context/). |
 | `overwrite`     | string | No      | `true` | If set to `false`, existing sourcemaps for the same version of your app will not be overwritten. Options are `true` or `false`. |
 | `publicUrl`  | string | Yes      | `<none>` | The fully qualified domain name for your application e.g., `https://app.fancy-app.com` |
+| `includeAppVersion` | boolean | No | `true` | Whether to tag the uploaded sourcemaps as belonging to a particular app version. |
 
 #### Related plugin options
 
