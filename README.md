@@ -79,6 +79,7 @@ Set by other Ember CLI Deploy plugins:
 | ---------- | ------------- | -------- | ----------- | ------ |
 | `distDir`     | string | `tmp/deploy-dist` | The path to your app's distribution directory. | [`ember-cli-build`](https://github.com/zapnito/ember-cli-deploy-build) |
 | `revisionKey`  | string | `<none>` | The unique identifier of a build based on its git tag. | [`ember-cli-deploy-revision-data`](https://github.com/zapnito/ember-cli-deploy-revision-data) |
+| `gzippedFiles` | array | `<none>` | A list of files that have been gzipped in the build. | [`ember-cli-deploy-gzip`](https://github.com/ember-cli-deploy/ember-cli-deploy-gzip) |
 
 ### Deploying to Heroku
 
