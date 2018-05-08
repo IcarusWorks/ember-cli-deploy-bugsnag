@@ -51,13 +51,12 @@ module.exports = {
         var overwrite = this.readConfig('overwrite');
         var includeAppVersion = this.readConfig('includeAppVersion');
         var promises = [];
-        var jsFilePaths = fetchFilePaths(distFiles, publicUrl, 'js');
-        var mapFilePaths = fetchFilePaths(distFiles, distDir, 'map');
+        var jsMapPairs = fetchJSMapPairs(distFiles, publicUrl, distDir);
         log('Uploading sourcemaps to bugsnag', { verbose: true });
 
-        for (var i = 0; i < mapFilePaths.length; i++) {
-          var mapFilePath = mapFilePaths[i];
-          var jsFilePath = jsFilePaths[i];
+        for (var i = 0; i < jsMapPairs.length; i++) {
+          var mapFilePath = jsMapPairs[i].mapFile;
+          var jsFilePath = jsMapPairs[i].jsFile;
           var formData = {
             apiKey: apiKey,
             overwrite: overwrite,
@@ -123,6 +122,27 @@ module.exports = {
     return new DeployPlugin();
   }
 };
+
+function fetchJSMapPairs(distFiles, publicUrl, distUrl) {
+  var jsFiles = indexByBaseFilename(fetchFilePaths(distFiles, '', 'js'));
+  return fetchFilePaths(distFiles, '', 'map').map(function(mapFile) {
+    return {
+      mapFile: distUrl + mapFile,
+      jsFile: publicUrl + jsFiles[getBaseFilename(mapFile)]
+    };
+  });
+}
+
+function indexByBaseFilename(files) {
+  return files.reduce(function(result, file) {
+    result[getBaseFilename(file)] = file;
+    return result;
+  }, {});
+}
+
+function getBaseFilename(file) {
+  return file.replace(/-[0-9a-f]+\.(js|map)$/, '');
+}
 
 function fetchFilePaths(distFiles, basePath, type) {
   return distFiles.filter(function(filePath) {
