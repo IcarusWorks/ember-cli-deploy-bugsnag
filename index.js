@@ -42,8 +42,6 @@ module.exports = {
       requiredConfig: ['apiKey', 'publicUrl'],
 
       upload: function() {
-        log('Uploading sourcemaps to bugsnag', { verbose: true });
-
         let log = this.log.bind(this);
         let apiKey = this.readConfig('apiKey');
         let revisionKey = this.readConfig('revisionKey');
@@ -54,6 +52,7 @@ module.exports = {
         let includeAppVersion = this.readConfig('includeAppVersion');
 
         let jsMapPairs = this._fetchJSMapPairs(distFiles);
+        log('Uploading sourcemaps to bugsnag', { verbose: true });
 
         let uploads = jsMapPairs.map(pair => {
           let mapFilePath = pair.mapFile;
@@ -73,9 +72,6 @@ module.exports = {
           if (revisionKey && includeAppVersion) {
             formData.appVersion = revisionKey;
           }
-
-          log('formData', { verbose: true });
-          log(JSON.stringify(formData, { verbose: true }));
 
           return request({
             uri: 'https://upload.bugsnag.com',
@@ -113,14 +109,19 @@ module.exports = {
       },
 
       _readSourceMap(mapFilePath) {
-        var relativeMapFilePath = mapFilePath.replace(this.readConfig('distDir') + '/', '');
-        if (this.readConfig('gzippedFiles').indexOf(relativeMapFilePath) !== -1) {
+        let relativeMapFilePath = mapFilePath.replace(
+          this.readConfig('distDir') + '/',
+          ''
+        );
+        if (
+          this.readConfig('gzippedFiles').indexOf(relativeMapFilePath) !== -1
+        ) {
           // When the source map is gzipped, we need to eagerly load it into a buffer
           // so that the actual content length is known.
           return {
             value: zlib.unzipSync(fs.readFileSync(mapFilePath)),
             options: {
-              filename: path.basename(mapFilePath),
+              filename: path.basename(mapFilePath)
             }
           };
         } else {
@@ -154,11 +155,12 @@ function getBaseFilename(file) {
   return file.replace(/-[0-9a-f]+\.(js|map)$/, '');
 }
 
-function fetchFilePaths(distFiles, basePath, type) {
-  return distFiles.filter(function(filePath) {
-    return new RegExp('assets\/.*\\.' + type + '$').test(filePath);
-  })
-  .map(function(filePath) {
-    return basePath + '/' + filePath;
-  });
+function fetchFilePathsByType(distFiles, basePath, type) {
+  return distFiles
+    .filter(function(filePath) {
+      return new RegExp('assets/.*\\.' + type + '$').test(filePath);
+    })
+    .map(function(filePath) {
+      return path.join(basePath, filePath);
+    });
 }
