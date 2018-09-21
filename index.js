@@ -51,8 +51,9 @@ module.exports = {
         let overwrite = this.readConfig('overwrite');
         let includeAppVersion = this.readConfig('includeAppVersion');
 
-        let jsMapPairs = this._fetchJSMapPairs(distFiles);
         log('Uploading sourcemaps to bugsnag', { verbose: true });
+
+        let jsMapPairs = fetchJSMapPairs(distFiles);
 
         let uploads = jsMapPairs.map(pair => {
           let mapFilePath = pair.mapFile;
@@ -134,12 +135,13 @@ module.exports = {
   }
 };
 
-function fetchJSMapPairs(distFiles, publicUrl, distUrl) {
-  var jsFiles = indexByBaseFilename(fetchFilePaths(distFiles, '', 'js'));
-  return fetchFilePaths(distFiles, '', 'map').map(function(mapFile) {
+function fetchJSMapPairs(distFiles) {
+  let jsFiles = indexByBaseFilename(fetchFilePathsByType(distFiles, '/', 'js'));
+  return fetchFilePathsByType(distFiles, '/', 'map').map(mapFile => {
+    let baseFileName = getBaseFilename(mapFile);
     return {
-      mapFile: distUrl + mapFile,
-      jsFile: publicUrl + jsFiles[getBaseFilename(mapFile)]
+      mapFile: mapFile,
+      jsFile: jsFiles[baseFileName]
     };
   });
 }
@@ -151,8 +153,20 @@ function indexByBaseFilename(files) {
   }, {});
 }
 
+function removeFingerprint(file) {
+  let re = /-[a-f0-9]+(?=\.(?:js|map)$)/;
+
+  return file.replace(re, '');
+}
+function removeExtension(file) {
+  let parts = path.parse(file);
+  delete parts.ext;
+  delete parts.base;
+  return path.format(parts);
+}
 function getBaseFilename(file) {
-  return file.replace(/-[0-9a-f]+\.(js|map)$/, '');
+  let withoutFingerprint = removeFingerprint(file);
+  return removeExtension(withoutFingerprint);
 }
 
 function fetchFilePathsByType(distFiles, basePath, type) {
