@@ -36,7 +36,7 @@ module.exports = {
         },
         includeAppVersion: true,
         deleteSourcemaps: true,
-        overwrite: 'true',
+        overwrite: true
       },
 
       requiredConfig: ['apiKey', 'publicUrl'],
@@ -60,10 +60,16 @@ module.exports = {
           let jsFilePath = pair.jsFile;
           let formData = {
             apiKey: apiKey,
-            overwrite: overwrite,
             minifiedUrl: publicUrl + jsFilePath,
             sourceMap: this._readSourceMap(path.join(distDir, mapFilePath))
           };
+
+          // the presence of any value for this flag causes the API to interpret it as
+          // true, so only add it to the payload if it is truthy
+          if (overwrite) {
+            formData.overwrite = String(overwrite);
+          }
+
           if (revisionKey && includeAppVersion) {
             formData.appVersion = revisionKey;
           }
