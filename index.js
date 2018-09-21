@@ -2,19 +2,19 @@
 
 'use strict';
 
-var RSVP = require('rsvp');
-var fs = require('fs');
-var path = require('path');
-var request = require('request-promise');
-var zlib = require('zlib');
+const RSVP = require('rsvp');
+const fs = require('fs');
+const path = require('path');
+const request = require('request-promise');
+const zlib = require('zlib');
 
-var BasePlugin = require('ember-cli-deploy-plugin');
+const BasePlugin = require('ember-cli-deploy-plugin');
 
 module.exports = {
   name: 'ember-cli-deploy-bugsnag',
 
   createDeployPlugin: function(options) {
-    var DeployPlugin = BasePlugin.extend({
+    const DeployPlugin = BasePlugin.extend({
       name: options.name,
 
       defaultConfig: {
@@ -36,57 +36,64 @@ module.exports = {
         },
         includeAppVersion: true,
         deleteSourcemaps: true,
-        overwrite: 'true',
+        overwrite: true
       },
 
       requiredConfig: ['apiKey', 'publicUrl'],
 
       upload: function() {
-        var log = this.log.bind(this);
-        var apiKey = this.readConfig('apiKey');
-        var revisionKey = this.readConfig('revisionKey');
-        var distDir = this.readConfig('distDir');
-        var distFiles = this.readConfig('distFiles');
-        var publicUrl = this.readConfig('publicUrl');
-        var overwrite = this.readConfig('overwrite');
-        var includeAppVersion = this.readConfig('includeAppVersion');
-        var promises = [];
-        var jsMapPairs = fetchJSMapPairs(distFiles, publicUrl, distDir);
+        let log = this.log.bind(this);
+        let apiKey = this.readConfig('apiKey');
+        let revisionKey = this.readConfig('revisionKey');
+        let distDir = this.readConfig('distDir');
+        let distFiles = this.readConfig('distFiles');
+        let publicUrl = this.readConfig('publicUrl');
+        let overwrite = this.readConfig('overwrite');
+        let includeAppVersion = this.readConfig('includeAppVersion');
+
         log('Uploading sourcemaps to bugsnag', { verbose: true });
 
-        for (var i = 0; i < jsMapPairs.length; i++) {
-          var mapFilePath = jsMapPairs[i].mapFile;
-          var jsFilePath = jsMapPairs[i].jsFile;
-          var formData = {
+        let jsMapPairs = fetchJSMapPairs(distFiles);
+
+        let uploads = jsMapPairs.map(pair => {
+          let mapFilePath = pair.mapFile;
+          let jsFilePath = pair.jsFile;
+          let formData = {
             apiKey: apiKey,
-            overwrite: overwrite,
-            minifiedUrl: jsFilePath,
-            sourceMap: this._readSourceMap(mapFilePath)
+            minifiedUrl: publicUrl + jsFilePath,
+            sourceMap: this._readSourceMap(path.join(distDir, mapFilePath))
           };
+
+          // the presence of any value for this flag causes the API to interpret it as
+          // true, so only add it to the payload if it is truthy
+          if (overwrite) {
+            formData.overwrite = String(overwrite);
+          }
+
           if (revisionKey && includeAppVersion) {
             formData.appVersion = revisionKey;
           }
-          var promise = request({
+
+          return request({
             uri: 'https://upload.bugsnag.com',
             method: 'POST',
             formData: formData
           });
-          promises.push(promise);
-        }
-        return RSVP.all(promises)
-          .then(function() {
-            log('Finished uploading sourcemaps', { verbose: true });
-          });
+        });
+
+        return RSVP.all(uploads).then(function() {
+          log('Finished uploading sourcemaps', { verbose: true });
+        });
       },
 
       didUpload() {
         this.log('Deleting sourcemaps', { verbose: true });
-        var deleteSourcemaps = this.readConfig('deleteSourcemaps');
+        let deleteSourcemaps = this.readConfig('deleteSourcemaps');
         if (deleteSourcemaps) {
-          var distDir = this.readConfig('distDir');
-          var distFiles = this.readConfig('distFiles');
-          var mapFilePaths = fetchFilePaths(distFiles, distDir, 'map');
-          var promises = mapFilePaths.map(function(mapFilePath) {
+          let distDir = this.readConfig('distDir');
+          let distFiles = this.readConfig('distFiles');
+          let mapFilePaths = fetchFilePathsByType(distFiles, distDir, 'map');
+          let promises = mapFilePaths.map(function(mapFilePath) {
             return new RSVP.Promise(function(resolve, reject) {
               fs.unlink(mapFilePath, function(err) {
                 if (err) {
@@ -102,15 +109,22 @@ module.exports = {
         }
       },
 
+      // read the sourcefile into memory, either as a stream or file object, so we can send
+      // the sourcemap contents to the bugsnag API
       _readSourceMap(mapFilePath) {
-        var relativeMapFilePath = mapFilePath.replace(this.readConfig('distDir') + '/', '');
-        if (this.readConfig('gzippedFiles').indexOf(relativeMapFilePath) !== -1) {
+        let relativeMapFilePath = mapFilePath.replace(
+          this.readConfig('distDir') + '/',
+          ''
+        );
+        if (
+          this.readConfig('gzippedFiles').indexOf(relativeMapFilePath) !== -1
+        ) {
           // When the source map is gzipped, we need to eagerly load it into a buffer
           // so that the actual content length is known.
           return {
             value: zlib.unzipSync(fs.readFileSync(mapFilePath)),
             options: {
-              filename: path.basename(mapFilePath),
+              filename: path.basename(mapFilePath)
             }
           };
         } else {
@@ -123,16 +137,41 @@ module.exports = {
   }
 };
 
-function fetchJSMapPairs(distFiles, publicUrl, distUrl) {
-  var jsFiles = indexByBaseFilename(fetchFilePaths(distFiles, '', 'js'));
-  return fetchFilePaths(distFiles, '', 'map').map(function(mapFile) {
+// This function takes all of the files in a build process, find the sourcemaps and their
+// corresponding javascript files, and returns each matching pair as on object containing
+// both the sourcemap and javascript file paths relative to the the build directory (meaning they
+// will start with `/assets/`)
+function fetchJSMapPairs(distFiles) {
+  let jsFiles = indexByBaseFilename(fetchFilePathsByType(distFiles, '/', 'js'));
+  return fetchFilePathsByType(distFiles, '/', 'map').map(mapFile => {
+    let baseFileName = getBaseFilename(mapFile);
     return {
-      mapFile: distUrl + mapFile,
-      jsFile: publicUrl + jsFiles[getBaseFilename(mapFile)]
+      mapFile: mapFile,
+      jsFile: jsFiles[baseFileName]
     };
   });
 }
 
+// this function takes a list of fully qualified file paths (including directory, name,
+// fingerprint hash, and extension) and returns them indexed by "base filename", which, in this case
+// means the file path without the fingerprint and extension type.
+// e.g. when given the following array:
+// ```
+// [
+//   "assets/foo-383483eabdh384.js",
+//   "assets/vendor-4392ehad384hd.js"
+// ]
+// ```
+//
+// `indexByBaseFilename` would return:
+// ```
+// {
+//   "assets/foo": "assets/foo-383483eabdh384.js",
+//   "assets/vendor": "assets/vendor-4392ehad384hd.js"
+// }
+// ```
+// This is used to match sourcemap files to their corresponding js files by ignoring the differing
+// fingerprint hashes and extensions
 function indexByBaseFilename(files) {
   return files.reduce(function(result, file) {
     result[getBaseFilename(file)] = file;
@@ -140,15 +179,38 @@ function indexByBaseFilename(files) {
   }, {});
 }
 
-function getBaseFilename(file) {
-  return file.replace(/-[0-9a-f]+\.(js|map)$/, '');
+// this function removes fingerprint hashes from .js and .map files, but leaves the extension
+// intact by using an unmarked group in a positive lookahead to check for the presence of the
+// extension type without actually replacing it.
+function removeFingerprint(file) {
+  let re = /-[a-f0-9]+(?=\.(?:js|map)$)/;
+
+  return file.replace(re, '');
 }
 
-function fetchFilePaths(distFiles, basePath, type) {
-  return distFiles.filter(function(filePath) {
-    return new RegExp('assets\/.*\\.' + type + '$').test(filePath);
-  })
-  .map(function(filePath) {
-    return basePath + '/' + filePath;
-  });
+// given a file path (including directory), this function will remove the extension and then
+// put all the other pieces back together into a normalized path string
+function removeExtension(file) {
+  let parts = path.parse(file);
+  delete parts.ext;
+  delete parts.base;
+  return path.format(parts);
+}
+
+// This function will remove the fingerprint hash (if it exists) and extension from a filename
+function getBaseFilename(file) {
+  let withoutFingerprint = removeFingerprint(file);
+  return removeExtension(withoutFingerprint);
+}
+
+// This function finds all files of a given type inside the `assets` folder of a given build
+// and returns them with a new basePath prepended
+function fetchFilePathsByType(distFiles, basePath, type) {
+  return distFiles
+    .filter(function(filePath) {
+      return new RegExp('assets/.*\\.' + type + '$').test(filePath);
+    })
+    .map(function(filePath) {
+      return path.join(basePath, filePath);
+    });
 }
