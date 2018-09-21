@@ -109,6 +109,8 @@ module.exports = {
         }
       },
 
+      // read the sourcefile into memory, either as a stream or file object, so we can send
+      // the sourcemap contents to the bugsnag API
       _readSourceMap(mapFilePath) {
         let relativeMapFilePath = mapFilePath.replace(
           this.readConfig('distDir') + '/',
@@ -135,6 +137,10 @@ module.exports = {
   }
 };
 
+// This function takes all of the files in a build process, find the sourcemaps and their
+// corresponding javascript files, and returns each matching pair as on object containing
+// both the sourcemap and javascript file paths relative to the the build directory (meaning they
+// will start with `/assets/`)
 function fetchJSMapPairs(distFiles) {
   let jsFiles = indexByBaseFilename(fetchFilePathsByType(distFiles, '/', 'js'));
   return fetchFilePathsByType(distFiles, '/', 'map').map(mapFile => {
@@ -146,6 +152,26 @@ function fetchJSMapPairs(distFiles) {
   });
 }
 
+// this function takes a list of fully qualified file paths (including directory, name,
+// fingerprint hash, and extension) and returns them indexed by "base filename", which, in this case
+// means the file path without the fingerprint and extension type.
+// e.g. when given the following array:
+// ```
+// [
+//   "assets/foo-383483eabdh384.js",
+//   "assets/vendor-4392ehad384hd.js"
+// ]
+// ```
+//
+// `indexByBaseFilename` would return:
+// ```
+// {
+//   "assets/foo": "assets/foo-383483eabdh384.js",
+//   "assets/vendor": "assets/vendor-4392ehad384hd.js"
+// }
+// ```
+// This is used to match sourcemap files to their corresponding js files by ignoring the differing
+// fingerprint hashes and extensions
 function indexByBaseFilename(files) {
   return files.reduce(function(result, file) {
     result[getBaseFilename(file)] = file;
@@ -153,22 +179,32 @@ function indexByBaseFilename(files) {
   }, {});
 }
 
+// this function removes fingerprint hashes from .js and .map files, but leaves the extension
+// intact by using an unmarked group in a positive lookahead to check for the presence of the
+// extension type without actually replacing it.
 function removeFingerprint(file) {
   let re = /-[a-f0-9]+(?=\.(?:js|map)$)/;
 
   return file.replace(re, '');
 }
+
+// given a file path (including directory), this function will remove the extension and then
+// put all the other pieces back together into a normalized path string
 function removeExtension(file) {
   let parts = path.parse(file);
   delete parts.ext;
   delete parts.base;
   return path.format(parts);
 }
+
+// This function will remove the fingerprint hash (if it exists) and extension from a filename
 function getBaseFilename(file) {
   let withoutFingerprint = removeFingerprint(file);
   return removeExtension(withoutFingerprint);
 }
 
+// This function finds all files of a given type inside the `assets` folder of a given build
+// and returns them with a new basePath prepended
 function fetchFilePathsByType(distFiles, basePath, type) {
   return distFiles
     .filter(function(filePath) {
