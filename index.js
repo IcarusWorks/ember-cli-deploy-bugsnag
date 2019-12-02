@@ -36,7 +36,8 @@ module.exports = {
         },
         includeAppVersion: true,
         deleteSourcemaps: true,
-        overwrite: true
+        overwrite: true,
+        uploadMinifiedFile: false
       },
 
       requiredConfig: ['apiKey', 'publicUrl'],
@@ -50,6 +51,7 @@ module.exports = {
         let publicUrl = this.readConfig('publicUrl');
         let overwrite = this.readConfig('overwrite');
         let includeAppVersion = this.readConfig('includeAppVersion');
+        let uploadMinifiedFile = this.readConfig('uploadMinifiedFile');
 
         log('Uploading sourcemaps to bugsnag', { verbose: true });
 
@@ -63,6 +65,12 @@ module.exports = {
             minifiedUrl: publicUrl + jsFilePath,
             sourceMap: this._readSourceMap(path.join(distDir, mapFilePath))
           };
+
+          if (uploadMinifiedFile) {
+            formData.minifiedFile = this._readSourceMap(
+              path.join(distDir, jsFilePath)
+            );
+          }
 
           // the presence of any value for this flag causes the API to interpret it as
           // true, so only add it to the payload if it is truthy
