@@ -8,23 +8,23 @@ chai.use(chaiAsPromised);
 var assert = chai.assert;
 var RSVP = require('rsvp');
 
-describe('bugsnag plugin', function() {
+describe('bugsnag plugin', function () {
   var subject;
   var mockUi;
   var context;
 
-  before(function() {
+  before(function () {
     subject = require('../../index');
   });
 
-  beforeEach(function() {
+  beforeEach(function () {
     mockUi = {
       verbose: true,
       messages: [],
-      write: function() {},
-      writeLine: function(message) {
+      write: function () {},
+      writeLine: function (message) {
         this.messages.push(message);
-      }
+      },
     };
 
     context = {
@@ -34,20 +34,20 @@ describe('bugsnag plugin', function() {
       ui: mockUi,
       config: {
         bugsnag: {
-          distDir: function(context) {
+          distDir: function (context) {
             return context.distDir;
           },
-          distFiles: function(context) {
+          distFiles: function (context) {
             return context.distFiles || [];
           },
-          gzippedFiles: function(context) {
+          gzippedFiles: function (context) {
             return context.gzippedFiles || [];
           },
-          revisionKey: function(context) {
+          revisionKey: function (context) {
             return context.revisionData.revisionKey || 'b43a9a';
           },
-          _upload: function() {
-            return function() {
+          _upload: function () {
+            return function () {
               return RSVP.resolve();
             };
           },
@@ -56,23 +56,23 @@ describe('bugsnag plugin', function() {
           deleteSourcemaps: true,
           publicUrl: 'https://myapp.cloudfront.net',
           overwrite: true,
-          uploadMinifiedFile: false
-        }
-      }
+          uploadMinifiedFile: false,
+        },
+      },
     };
   });
 
-  it('has a name', function() {
+  it('has a name', function () {
     var plugin = subject.createDeployPlugin({
-      name: 'bugsnag'
+      name: 'bugsnag',
     });
 
     assert.equal(plugin.name, 'bugsnag');
   });
 
-  it('implements the correct hooks', function() {
+  it('implements the correct hooks', function () {
     var plugin = subject.createDeployPlugin({
-      name: 'bugsnag'
+      name: 'bugsnag',
     });
 
     assert.typeOf(plugin.configure, 'function');
@@ -80,40 +80,40 @@ describe('bugsnag plugin', function() {
     assert.typeOf(plugin.didUpload, 'function');
   });
 
-  describe('configure hook', function() {
-    it('does not throw if config is ok', function() {
+  describe('configure hook', function () {
+    it('does not throw if config is ok', function () {
       var plugin = subject.createDeployPlugin({
-        name: 'bugsnag'
+        name: 'bugsnag',
       });
       plugin.beforeHook(context);
       plugin.configure(context);
       assert.ok(true); // it didn't throw
     });
 
-    it('throws if config is not valid', function() {
+    it('throws if config is not valid', function () {
       var plugin = subject.createDeployPlugin({
-        name: 'bugsnag'
+        name: 'bugsnag',
       });
 
       context.config.bugsnag = {};
 
       plugin.beforeHook(context);
-      assert.throws(function() {
+      assert.throws(function () {
         plugin.configure(context);
       });
     });
 
-    it('warns about missing optional config', function() {
+    it('warns about missing optional config', function () {
       delete context.config.bugsnag.overwrite;
       delete context.config.bugsnag.distFiles;
       delete context.config.bugsnag.includeAppVersion;
 
       var plugin = subject.createDeployPlugin({
-        name: 'bugsnag'
+        name: 'bugsnag',
       });
       plugin.beforeHook(context);
       plugin.configure(context);
-      var messages = mockUi.messages.reduce(function(previous, current) {
+      var messages = mockUi.messages.reduce(function (previous, current) {
         if (/- Missing config:\s.*, using default:\s/.test(current)) {
           previous.push(current);
         }
@@ -124,18 +124,18 @@ describe('bugsnag plugin', function() {
       assert.equal(messages.length, 3);
     });
 
-    describe('required config', function() {
-      it('warns about missing apiKey', function() {
+    describe('required config', function () {
+      it('warns about missing apiKey', function () {
         delete context.config.bugsnag.apiKey;
 
         var plugin = subject.createDeployPlugin({
-          name: 'bugsnag'
+          name: 'bugsnag',
         });
         plugin.beforeHook(context);
-        assert.throws(function(/* error */) {
+        assert.throws(function (/* error */) {
           plugin.configure(context);
         });
-        var messages = mockUi.messages.reduce(function(previous, current) {
+        var messages = mockUi.messages.reduce(function (previous, current) {
           if (/- Missing required config: `apiKey`/.test(current)) {
             previous.push(current);
           }
@@ -146,17 +146,17 @@ describe('bugsnag plugin', function() {
         assert.equal(messages.length, 1);
       });
 
-      it('warns about missing publicUrl', function() {
+      it('warns about missing publicUrl', function () {
         delete context.config.bugsnag.publicUrl;
 
         var plugin = subject.createDeployPlugin({
-          name: 'bugsnag'
+          name: 'bugsnag',
         });
         plugin.beforeHook(context);
-        assert.throws(function(/* error */) {
+        assert.throws(function (/* error */) {
           plugin.configure(context);
         });
-        var messages = mockUi.messages.reduce(function(previous, current) {
+        var messages = mockUi.messages.reduce(function (previous, current) {
           if (/- Missing required config: `publicUrl`/.test(current)) {
             previous.push(current);
           }
@@ -168,7 +168,7 @@ describe('bugsnag plugin', function() {
       });
     });
 
-    it('adds default config to the config object', function() {
+    it('adds default config to the config object', function () {
       delete context.config.bugsnag.overwrite;
       delete context.config.bugsnag.includeAppVersion;
       delete context.config.bugsnag.deleteSourcemaps;
@@ -183,7 +183,7 @@ describe('bugsnag plugin', function() {
       assert.isUndefined(context.config.bugsnag.revisionKey);
 
       var plugin = subject.createDeployPlugin({
-        name: 'bugsnag'
+        name: 'bugsnag',
       });
       plugin.beforeHook(context);
       plugin.configure(context);
@@ -196,29 +196,29 @@ describe('bugsnag plugin', function() {
     });
   });
 
-  describe('#upload hook', function() {
-    it('prints the begin message', function() {
+  describe('#upload hook', function () {
+    it('prints the begin message', function () {
       var plugin = subject.createDeployPlugin({
-        name: 'bugsnag'
+        name: 'bugsnag',
       });
 
       plugin.beforeHook(context);
-      return assert.isFulfilled(plugin.upload(context)).then(function() {
+      return assert.isFulfilled(plugin.upload(context)).then(function () {
         assert.equal(mockUi.messages.length, 2);
         assert.match(mockUi.messages[0], /Uploading sourcemaps to bugsnag/);
       });
     });
 
-    it('prints success message when files successfully uploaded', function() {
+    it('prints success message when files successfully uploaded', function () {
       var plugin = subject.createDeployPlugin({
-        name: 'bugsnag'
+        name: 'bugsnag',
       });
 
       plugin.beforeHook(context);
-      return assert.isFulfilled(plugin.upload(context)).then(function() {
+      return assert.isFulfilled(plugin.upload(context)).then(function () {
         assert.equal(mockUi.messages.length, 2);
 
-        var messages = mockUi.messages.reduce(function(previous, current) {
+        var messages = mockUi.messages.reduce(function (previous, current) {
           if (/Finished uploading sourcemaps/.test(current)) {
             previous.push(current);
           }
@@ -230,9 +230,9 @@ describe('bugsnag plugin', function() {
       });
     });
 
-    it('sends the correct arguments to the upload function for each file', function() {
-      context.config.bugsnag._upload = function() {
-        return function(options) {
+    it('sends the correct arguments to the upload function for each file', function () {
+      context.config.bugsnag._upload = function () {
+        return function (options) {
           mockUi.writeLine('Custom upload called');
           assert.equal(options.uri, 'https://upload.bugsnag.com');
           assert.equal(options.method, 'POST');
@@ -248,14 +248,14 @@ describe('bugsnag plugin', function() {
         };
       };
       var plugin = subject.createDeployPlugin({
-        name: 'bugsnag'
+        name: 'bugsnag',
       });
 
       plugin.beforeHook(context);
-      return assert.isFulfilled(plugin.upload(context)).then(function() {
+      return assert.isFulfilled(plugin.upload(context)).then(function () {
         assert.equal(mockUi.messages.length, 3);
 
-        var messages = mockUi.messages.reduce(function(previous, current) {
+        var messages = mockUi.messages.reduce(function (previous, current) {
           if (/Custom upload called/.test(current)) {
             previous.push(current);
           }
@@ -268,39 +268,39 @@ describe('bugsnag plugin', function() {
     });
   });
 
-  describe('#didUpload hook', function() {
-    it('prints the begin message', function() {
-      context.config.bugsnag._deleteFile = function() {
-        return function(mapFilePath, callback) {
+  describe('#didUpload hook', function () {
+    it('prints the begin message', function () {
+      context.config.bugsnag._deleteFile = function () {
+        return function (mapFilePath, callback) {
           callback();
         };
       };
       var plugin = subject.createDeployPlugin({
-        name: 'bugsnag'
+        name: 'bugsnag',
       });
 
       plugin.beforeHook(context);
-      return assert.isFulfilled(plugin.didUpload(context)).then(function() {
+      return assert.isFulfilled(plugin.didUpload(context)).then(function () {
         assert.equal(mockUi.messages.length, 1);
         assert.match(mockUi.messages[0], /Deleting sourcemaps/);
       });
     });
 
-    it('sends the correct arguments to fs.unlink', function() {
-      context.config.bugsnag._deleteFile = function() {
-        return function(mapFilePath, callback) {
+    it('sends the correct arguments to fs.unlink', function () {
+      context.config.bugsnag._deleteFile = function () {
+        return function (mapFilePath, callback) {
           mockUi.writeLine('Custom unlink called');
           assert.ok(mapFilePath.endsWith('assets/app.map'));
           callback();
         };
       };
       var plugin = subject.createDeployPlugin({
-        name: 'bugsnag'
+        name: 'bugsnag',
       });
 
       plugin.beforeHook(context);
-      return assert.isFulfilled(plugin.didUpload(context)).then(function() {
-        var messages = mockUi.messages.reduce(function(previous, current) {
+      return assert.isFulfilled(plugin.didUpload(context)).then(function () {
+        var messages = mockUi.messages.reduce(function (previous, current) {
           if (/Custom unlink called/.test(current)) {
             previous.push(current);
           }
