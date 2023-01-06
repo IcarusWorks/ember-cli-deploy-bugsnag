@@ -1,4 +1,5 @@
-# ember-cli-deploy-bugsnag
+ember-cli-deploy-bugsnag
+==============================================================================
 
 [![NPM release][npm-badge]][npm-badge-url]
 [![Build][travis-badge]][travis-badge-url]
@@ -15,11 +16,24 @@ An [Ember CLI Deploy](http://ember-cli-deploy.com/) plugin for [uploading source
 
 To send errors to Bugsnag, see [`ember-cli-bugsnag`](https://github.com/binhums/ember-cli-bugsnag).
 
-## Installation
+Compatibility
+------------------------------------------------------------------------------
 
-* `ember install ember-cli-deploy ember-cli-deploy-build ember-cli-deploy-bugsnag`
+* Ember.js v3.24 or above
+* Ember CLI v3.24 or above
+* Node.js v12 or above
 
-### Quick start
+
+Installation
+------------------------------------------------------------------------------
+
+```
+ember install ember-cli-deploy-bugsnag
+```
+
+
+Usage
+------------------------------------------------------------------------------
 
 Enable sourcemaps for all environments in `ember-cli-build.js`:
 
@@ -105,15 +119,13 @@ Heroku strips away git information, so this addon grabs the revision info from t
   };
 ```
 
-## Developing
+Contributing
+------------------------------------------------------------------------------
 
-### Running
+See the [Contributing](CONTRIBUTING.md) guide for details.
 
-* `ember serve`
-* Visit your app at [http://localhost:4200](http://localhost:4200).
 
-### Running Tests
+License
+------------------------------------------------------------------------------
 
-* `npm test` (Runs `ember try:each` to test your addon against multiple Ember versions)
-* `ember test`
-* `ember test --server`
+This project is licensed under the [MIT License](LICENSE.md).

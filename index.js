@@ -1,5 +1,4 @@
-/* eslint-env node */
-
+/* eslint-disable ember/avoid-leaking-state-in-ember-objects */
 'use strict';
 
 const RSVP = require('rsvp');
@@ -13,21 +12,21 @@ const BasePlugin = require('ember-cli-deploy-plugin');
 module.exports = {
   name: 'ember-cli-deploy-bugsnag',
 
-  createDeployPlugin: function(options) {
+  createDeployPlugin: function (options) {
     const DeployPlugin = BasePlugin.extend({
       name: options.name,
 
       defaultConfig: {
-        distDir: function(context) {
+        distDir: function (context) {
           return context.distDir;
         },
-        distFiles: function(context) {
+        distFiles: function (context) {
           return context.distFiles;
         },
-        gzippedFiles: function(context) {
+        gzippedFiles: function (context) {
           return context.gzippedFiles || [];
         },
-        revisionKey: function(context) {
+        revisionKey: function (context) {
           if (context.revisionData) {
             return context.revisionData.revisionKey;
           } else {
@@ -37,12 +36,12 @@ module.exports = {
         includeAppVersion: true,
         deleteSourcemaps: true,
         overwrite: true,
-        uploadMinifiedFile: false
+        uploadMinifiedFile: false,
       },
 
       requiredConfig: ['apiKey', 'publicUrl'],
 
-      upload: function() {
+      upload: function () {
         let log = this.log.bind(this);
         let apiKey = this.readConfig('apiKey');
         let revisionKey = this.readConfig('revisionKey');
@@ -58,13 +57,13 @@ module.exports = {
 
         let jsMapPairs = fetchJSMapPairs(distFiles);
 
-        let uploads = jsMapPairs.map(pair => {
+        let uploads = jsMapPairs.map((pair) => {
           let mapFilePath = pair.mapFile;
           let jsFilePath = pair.jsFile;
           let formData = {
             apiKey: apiKey,
             minifiedUrl: publicUrl + jsFilePath,
-            sourceMap: this._readSourceMap(path.join(distDir, mapFilePath))
+            sourceMap: this._readSourceMap(path.join(distDir, mapFilePath)),
           };
 
           if (uploadMinifiedFile) {
@@ -86,11 +85,11 @@ module.exports = {
           return upload({
             uri: 'https://upload.bugsnag.com',
             method: 'POST',
-            formData: formData
+            formData: formData,
           });
         });
 
-        return RSVP.all(uploads).then(function() {
+        return RSVP.all(uploads).then(function () {
           log('Finished uploading sourcemaps', { verbose: true });
         });
       },
@@ -103,9 +102,9 @@ module.exports = {
           let distDir = this.readConfig('distDir');
           let distFiles = this.readConfig('distFiles');
           let mapFilePaths = fetchFilePathsByType(distFiles, distDir, 'map');
-          let promises = mapFilePaths.map(function(mapFilePath) {
-            return new RSVP.Promise(function(resolve, reject) {
-              deleteFile(mapFilePath, function(err) {
+          let promises = mapFilePaths.map(function (mapFilePath) {
+            return new RSVP.Promise(function (resolve, reject) {
+              deleteFile(mapFilePath, function (err) {
                 if (err) {
                   reject();
                 } else {
@@ -134,17 +133,17 @@ module.exports = {
           return {
             value: zlib.unzipSync(fs.readFileSync(mapFilePath)),
             options: {
-              filename: path.basename(mapFilePath)
-            }
+              filename: path.basename(mapFilePath),
+            },
           };
         } else {
           return fs.createReadStream(mapFilePath);
         }
-      }
+      },
     });
 
     return new DeployPlugin();
-  }
+  },
 };
 
 // This function takes all of the files in a build process, find the sourcemaps and their
@@ -153,11 +152,11 @@ module.exports = {
 // will start with `/assets/`)
 function fetchJSMapPairs(distFiles) {
   let jsFiles = indexByBaseFilename(fetchFilePathsByType(distFiles, '/', 'js'));
-  return fetchFilePathsByType(distFiles, '/', 'map').map(mapFile => {
+  return fetchFilePathsByType(distFiles, '/', 'map').map((mapFile) => {
     let baseFileName = getBaseFilename(mapFile);
     return {
       mapFile: mapFile,
-      jsFile: jsFiles[baseFileName]
+      jsFile: jsFiles[baseFileName],
     };
   });
 }
@@ -183,7 +182,7 @@ function fetchJSMapPairs(distFiles) {
 // This is used to match sourcemap files to their corresponding js files by ignoring the differing
 // fingerprint hashes and extensions
 function indexByBaseFilename(files) {
-  return files.reduce(function(result, file) {
+  return files.reduce(function (result, file) {
     result[getBaseFilename(file)] = file;
     return result;
   }, {});
@@ -217,10 +216,10 @@ function getBaseFilename(file) {
 // and returns them with a new basePath prepended
 function fetchFilePathsByType(distFiles, basePath, type) {
   return distFiles
-    .filter(function(filePath) {
+    .filter(function (filePath) {
       return new RegExp('assets/.*\\.' + type + '$').test(filePath);
     })
-    .map(function(filePath) {
+    .map(function (filePath) {
       return path.join(basePath, filePath);
     });
 }

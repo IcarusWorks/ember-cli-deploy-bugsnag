@@ -5,6 +5,6 @@ module.exports = {
     describe: true,
     before: true,
     beforeEach: true,
-    it: true
-  }
+    it: true,
+  },
 };
