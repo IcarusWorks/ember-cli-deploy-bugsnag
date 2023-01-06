@@ -1,7 +1,10 @@
 /*eslint-env node*/
 
 module.exports = {
-  env: {
-    embertest: true
+  globals: {
+    describe: true,
+    before: true,
+    beforeEach: true,
+    it: true
   }
 };

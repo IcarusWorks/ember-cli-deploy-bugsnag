@@ -52,6 +52,7 @@ module.exports = {
         let overwrite = this.readConfig('overwrite');
         let includeAppVersion = this.readConfig('includeAppVersion');
         let uploadMinifiedFile = this.readConfig('uploadMinifiedFile');
+        let upload = this.readConfig('_upload') || request;
 
         log('Uploading sourcemaps to bugsnag', { verbose: true });
 
@@ -82,7 +83,7 @@ module.exports = {
             formData.appVersion = revisionKey;
           }
 
-          return request({
+          return upload({
             uri: 'https://upload.bugsnag.com',
             method: 'POST',
             formData: formData
@@ -97,13 +98,14 @@ module.exports = {
       didUpload() {
         this.log('Deleting sourcemaps', { verbose: true });
         let deleteSourcemaps = this.readConfig('deleteSourcemaps');
+        let deleteFile = this.readConfig('_deleteFile') || fs.unlink;
         if (deleteSourcemaps) {
           let distDir = this.readConfig('distDir');
           let distFiles = this.readConfig('distFiles');
           let mapFilePaths = fetchFilePathsByType(distFiles, distDir, 'map');
           let promises = mapFilePaths.map(function(mapFilePath) {
             return new RSVP.Promise(function(resolve, reject) {
-              fs.unlink(mapFilePath, function(err) {
+              deleteFile(mapFilePath, function(err) {
                 if (err) {
                   reject();
                 } else {
