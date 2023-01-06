@@ -21,7 +21,9 @@
   "scripts": {
     "build": "ember build",
     "start": "ember server",
-    "test": "yarn eslint ."
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "npm run lint"
   },
   "dependencies": {
     "ember-cli-babel": "^6.16.0",
